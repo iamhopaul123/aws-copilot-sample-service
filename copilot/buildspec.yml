@@ -9,8 +9,8 @@ phases:
       - echo "cd into $CODEBUILD_SRC_DIR"
       - cd $CODEBUILD_SRC_DIR
       # Download the copilot linux binary.
-      - wget https://penghaoh.s3-us-west-2.amazonaws.com/copilot-linux-amd64
-      - mv copilot-linux-amd64 ./copilot-linux
+      - wget https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v1.8.1
+      - mv ./copilot-linux-v1.8.1 ./copilot-linux
       - chmod +x ./copilot-linux
   build:
     commands:
@@ -23,7 +23,6 @@ phases:
       # First, upgrade the cloudformation stack of every environment in the pipeline.
       - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipeline.yml | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))')
       - pl_envs=$(echo $pipeline | jq '.stages[].name' | sed 's/"//g')
-      - ./copilot-linux app upgrade
       - >
         for pl_env in $pl_envs; do
         ./copilot-linux env upgrade -n $pl_env;
@@ -58,8 +57,8 @@ phases:
           if [ -f "$ADDONSFILE" ]; then
             tmp=$(mktemp)
             timestamp=$(date +%s)
-            aws s3 cp "$ADDONSFILE" "s3://stackset-demo-infrastruc-pipelinebuiltartifactbuc-1x5mgdfoh1qpe/manual/$timestamp/$workload.addons.stack.yml";
-            jq --arg a "https://stackset-demo-infrastruc-pipelinebuiltartifactbuc-1x5mgdfoh1qpe.s3.us-west-1.amazonaws.com/manual/$timestamp/$workload.addons.stack.yml" '.Parameters.AddonsTemplateURL = $a' ./infrastructure/$workload-test.params.json > "$tmp" && mv "$tmp" ./infrastructure/$workload-test.params.json
+            aws s3 cp "$ADDONSFILE" "s3://stackset-demo-infrastruc-pipelinebuiltartifactbuc-brxpfkjpc4lu/manual/$timestamp/$workload.addons.stack.yml";
+            jq --arg a "https://stackset-demo-infrastruc-pipelinebuiltartifactbuc-brxpfkjpc4lu.s3.us-west-2.amazonaws.com/manual/$timestamp/$workload.addons.stack.yml" '.Parameters.AddonsTemplateURL = $a' ./infrastructure/$workload-test.params.json > "$tmp" && mv "$tmp" ./infrastructure/$workload-test.params.json
           fi
         done;
       # Build images
