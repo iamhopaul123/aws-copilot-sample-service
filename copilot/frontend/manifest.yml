@@ -13,6 +13,7 @@ http:
   path: '/'
   # You can specify a custom health check path. The default is "/".
   # healthcheck: '/'
+  # alias: penghaoh.com
 
 # Configuration for your containers and service.
 image:
@@ -23,16 +24,8 @@ image:
 
 cpu: 256       # Number of CPU units for the task.
 memory: 512    # Amount of memory in MiB used by the task.
-count:
-  range: 3-10
-  cpu_percentage: 70
+count: 2
 exec: true     # Enable running commands in your container.
-
-network:
-  vpc:
-    placement: private
-
-env_file: foo.env
 
 # Optional fields for more advanced use-cases.
 #
@@ -43,6 +36,6 @@ env_file: foo.env
 #  GITHUB_TOKEN: GITHUB_TOKEN  # The key is the name of the environment variable, the value is the name of the SSM parameter.
 
 # You can override any of the values defined above by environment.
-environments:
-  prod:
-    env_file: asdf.env
+# environments:
+#   prod:
+#     env_file: asdf.env
