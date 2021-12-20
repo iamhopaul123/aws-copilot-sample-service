@@ -1,5 +1,9 @@
 # Buildspec runs in the build stage of your pipeline.
 version: 0.2
+env:
+  parameter-store:
+    DOCKER_USERNAME: DOCKER_USERNAME
+    DOCKER_PASSWD: DOCKER_PASSWD
 phases:
   install:
     runtime-versions:
@@ -20,6 +24,7 @@ phases:
     commands:
       - ls -l
       - export COLOR="false"
+      - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWD
       # First, upgrade the cloudformation stack of every environment in the pipeline.
       - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipeline.yml | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))')
       - pl_envs=$(echo $pipeline | jq -r '.stages[].name')
@@ -104,7 +109,7 @@ phases:
                 tmp=$(mktemp)
                 checksum=$(cat $ENVFILE | sha256sum | head -c 64)
                 aws s3 cp "$ENVFILE" "s3://stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf/manual/$checksum/$env_file";
-                jq --arg a "arn:$PARTITION:s3:::stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf.s3-us-west-2.amazonaws.com/manual/$checksum/$env_file" '.Parameters.EnvFileARN = $a' ./infrastructure/$workload-test.params.json > "$tmp" && mv "$tmp" ./infrastructure/$workload-test.params.json
+                jq --arg a "arn:$PARTITION:s3:::stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf/manual/$checksum/$env_file" '.Parameters.EnvFileARN = $a' ./infrastructure/$workload-test.params.json > "$tmp" && mv "$tmp" ./infrastructure/$workload-test.params.json
               fi
             fi
           done;
