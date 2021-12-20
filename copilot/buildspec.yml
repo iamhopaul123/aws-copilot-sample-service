@@ -102,9 +102,9 @@ phases:
             if [ -f "$ENVFILE" ]; then
               if [ $env = test ]; then
                 tmp=$(mktemp)
-                checksum=$(cat $ENVFILE | sha256sum)
-                aws s3 cp "$ENVFILE" "s3://stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf/manual/$checksum/$ENVFILE";
-                jq --arg a "arn:$PARTITION:s3:::stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf.s3-us-west-2.amazonaws.com/manual/$checksum/$ENVFILE" '.Parameters.EnvFileARN = $a' ./infrastructure/$workload-test.params.json > "$tmp" && mv "$tmp" ./infrastructure/$workload-test.params.json
+                checksum=$(cat $ENVFILE | sha256sum | head -c 64)
+                aws s3 cp "$ENVFILE" "s3://stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf/manual/$checksum/$env_file";
+                jq --arg a "arn:$PARTITION:s3:::stackset-demo-infrastruc-pipelinebuiltartifactbuc-11dj7ctf52wyf.s3-us-west-2.amazonaws.com/manual/$checksum/$env_file" '.Parameters.EnvFileARN = $a' ./infrastructure/$workload-test.params.json > "$tmp" && mv "$tmp" ./infrastructure/$workload-test.params.json
               fi
             fi
           done;
