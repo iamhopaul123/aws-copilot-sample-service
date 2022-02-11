@@ -1,0 +1,26 @@
+{
+  "Parameters" : { 
+    "AppName": "demo",
+    "EnvName": "test",
+    "WorkloadName": "frontend",
+    "ContainerImage": "403971813171.dkr.ecr.us-west-1.amazonaws.com/demo/frontend:latest",
+    "AddonsTemplateURL": "",
+    "TaskCPU": "256",
+    "TaskMemory": "512",
+    "TaskCount": "2",
+    "LogRetention": "30",
+    "ContainerPort": "80",
+    "DNSDelegated": "false",
+    "TargetContainer": "frontend",
+    "TargetPort": "80",
+    "EnvFileARN": "",
+    "RulePath": "/",
+    "HTTPSEnabled": "false",
+    "Stickiness": "false"
+  },
+  "Tags": { 
+    "copilot-application": "demo",
+    "copilot-environment": "test",
+    "copilot-service": "frontend"
+  }
+}
