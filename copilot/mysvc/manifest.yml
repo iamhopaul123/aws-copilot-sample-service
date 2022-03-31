@@ -16,7 +16,7 @@ image:
 
 http:
   path: '/'
-  alias: v1.penghaoh.com
+  alias: v2.penghaoh.com
 
 # http:
 #   healthcheck:
