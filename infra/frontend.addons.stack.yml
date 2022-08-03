@@ -1,0 +1,115 @@
+Parameters:
+    App:
+        Type: String
+        Description: Your application's name.
+    Env:
+        Type: String
+        Description: The environment name your service, job, or workflow is being deployed to.
+    Name:
+        Type: String
+        Description: The name of the service, job, or workflow being deployed.
+    # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
+    frontendclusterDBName:
+        Type: String
+        Description: The name of the initial database to be created in the DB cluster.
+        Default: db
+        # Cannot have special characters
+        # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
+    frontendclusterDBAutoPauseSeconds:
+        Type: Number
+        Description: The duration in seconds before the cluster pauses.
+        Default: 1000
+Mappings:
+    frontendclusterEnvScalingConfigurationMap:
+        test:
+            "DBMinCapacity": 2 # AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
+            "DBMaxCapacity": 8 # AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
+        All:
+            "DBMinCapacity": 2 # AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
+            "DBMaxCapacity": 8 # AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
+Resources:
+    frontendclusterDBSubnetGroup:
+        Type: 'AWS::RDS::DBSubnetGroup'
+        Properties:
+            DBSubnetGroupDescription: Group of Copilot private subnets for Aurora cluster.
+            SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets'}]
+    frontendclusterSecurityGroup:
+        Metadata:
+            'aws:copilot:description': 'A security group for your workload to access the DB cluster frontendcluster'
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: !Sub 'The Security Group for ${Name} to access DB cluster frontendcluster.'
+            VpcId:
+                Fn::ImportValue: !Sub '${App}-${Env}-VpcId'
+            Tags:
+                - Key: Name
+                  Value: !Sub 'copilot-${App}-${Env}-${Name}-Aurora'
+    frontendclusterDBClusterSecurityGroup:
+        Metadata:
+            'aws:copilot:description': 'A security group for your DB cluster frontendcluster'
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: The Security Group for the database cluster.
+            SecurityGroupIngress:
+                - ToPort: 5432
+                  FromPort: 5432
+                  IpProtocol: tcp
+                  Description: !Sub 'From the Aurora Security Group of the workload ${Name}.'
+                  SourceSecurityGroupId: !Ref frontendclusterSecurityGroup
+            VpcId:
+                Fn::ImportValue: !Sub '${App}-${Env}-VpcId'
+    frontendclusterAuroraSecret:
+        Metadata:
+            'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
+        Type: AWS::SecretsManager::Secret
+        Properties:
+            Description: !Sub Aurora main user secret for ${AWS::StackName}
+            GenerateSecretString:
+                SecretStringTemplate: '{"username": "postgres"}'
+                GenerateStringKey: "password"
+                ExcludePunctuation: true
+                IncludeSpace: false
+                PasswordLength: 16
+    frontendclusterDBClusterParameterGroup:
+        Metadata:
+            'aws:copilot:description': 'A DB parameter group for engine configuration values'
+        Type: 'AWS::RDS::DBClusterParameterGroup'
+        Properties:
+            Description: !Ref 'AWS::StackName'
+            Family: 'aurora-postgresql10'
+            Parameters:
+                client_encoding: 'UTF8'
+    frontendclusterDBCluster:
+        Metadata:
+            'aws:copilot:description': 'The frontendcluster Aurora Serverless database cluster'
+        Type: 'AWS::RDS::DBCluster'
+        Properties:
+            MasterUsername: !Join ["", ['{{resolve:secretsmanager:', !Ref frontendclusterAuroraSecret, ":SecretString:username}}"]]
+            MasterUserPassword: !Join ["", ['{{resolve:secretsmanager:', !Ref frontendclusterAuroraSecret, ":SecretString:password}}"]]
+            DatabaseName: !Ref frontendclusterDBName
+            Engine: 'aurora-postgresql'
+            EngineVersion: '10.12'
+            EngineMode: serverless
+            DBClusterParameterGroupName: !Ref frontendclusterDBClusterParameterGroup
+            DBSubnetGroupName: !Ref frontendclusterDBSubnetGroup
+            VpcSecurityGroupIds:
+                - !Ref frontendclusterDBClusterSecurityGroup
+            ScalingConfiguration:
+                AutoPause: true
+                # Replace "All" below with "!Ref Env" to set different autoscaling limits per environment.
+                MinCapacity: !FindInMap [frontendclusterEnvScalingConfigurationMap, All, DBMinCapacity]
+                MaxCapacity: !FindInMap [frontendclusterEnvScalingConfigurationMap, All, DBMaxCapacity]
+                SecondsUntilAutoPause: !Ref frontendclusterDBAutoPauseSeconds
+    frontendclusterSecretAuroraClusterAttachment:
+        Type: AWS::SecretsManager::SecretTargetAttachment
+        Properties:
+            SecretId: !Ref frontendclusterAuroraSecret
+            TargetId: !Ref frontendclusterDBCluster
+            TargetType: AWS::RDS::DBCluster
+Outputs:
+    frontendclusterSecret: # injected as FRONTENDCLUSTER_SECRET environment variable by Copilot.
+        Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
+        Value: !Ref frontendclusterAuroraSecret
+    frontendclusterSecurityGroup:
+        Description: "The security group to attach to the workload."
+        Value: !Ref frontendclusterSecurityGroup

@@ -1,0 +1,9 @@
+name: test
+type: Environment
+observability:
+  container_insights: false
+# http: 
+#   public: 
+#     certificates: ['arn:aws:acm:us-west-2:403971813171:certificate/e5a6e114-b022-45b1-9339-38fbfd6db3e2']
+
+cdn: true

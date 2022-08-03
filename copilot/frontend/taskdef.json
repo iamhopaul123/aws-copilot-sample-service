@@ -1,0 +1,7 @@
+{
+  "networkMode":"awsvpc",
+  "family":"",
+  "containerDefinitions":[{
+    "spot_from": ""
+  }]
+}

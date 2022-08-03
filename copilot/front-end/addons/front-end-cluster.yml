@@ -8,11 +8,14 @@ Parameters:
   Name:
     Type: String
     Description: The name of the service, job, or workflow being deployed.
+  ServiceSecurityGroupId:
+    Type: String
+    Description: The security group associated with the VPC connector.
   # Customize your Aurora Serverless cluster by setting the default value of the following parameters.
   frontendclusterDBName:
     Type: String
     Description: The name of the initial database to be created in the DB cluster.
-    Default: db
+    Default: mydb
     # Cannot have special characters
     # Naming constraints: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Limits.html#RDS_Limits.Constraints
   frontendclusterDBAutoPauseSeconds:
@@ -37,18 +40,6 @@ Resources:
       DBSubnetGroupDescription: Group of Copilot private subnets for Aurora cluster.
       SubnetIds:
         !Split [',', { 'Fn::ImportValue': !Sub '${App}-${Env}-PrivateSubnets' }]
-  frontendclusterSecurityGroup:
-    Metadata:
-      'aws:copilot:description': 'A security group for your workload to access the DB cluster frontendcluster'
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: !Sub 'The Security Group for ${Name} to access DB cluster frontendcluster.'
-      VpcId:
-        Fn::ImportValue:
-          !Sub '${App}-${Env}-VpcId'
-      Tags:
-        - Key: Name
-          Value: !Sub 'copilot-${App}-${Env}-${Name}-Aurora'
   frontendclusterDBClusterSecurityGroup:
     Metadata:
       'aws:copilot:description': 'A security group for your DB cluster frontendcluster'
@@ -60,10 +51,11 @@ Resources:
           FromPort: 5432
           IpProtocol: tcp
           Description: !Sub 'From the Aurora Security Group of the workload ${Name}.'
-          SourceSecurityGroupId: !Ref frontendclusterSecurityGroup
+          SourceSecurityGroupId: !Ref ServiceSecurityGroupId
       VpcId:
         Fn::ImportValue:
           !Sub '${App}-${Env}-VpcId'
+
   frontendclusterAuroraSecret:
     Metadata:
       'aws:copilot:description': 'A Secrets Manager secret to store your DB credentials'
@@ -76,6 +68,24 @@ Resources:
         ExcludePunctuation: true
         IncludeSpace: false
         PasswordLength: 16
+
+  frontendclusterAuroraSecretAccessPolicy:
+    Metadata:
+      'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the DB credentials secret'
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub
+        - Grants read access to the ${Secret} secret
+        - { Secret: !Ref frontendclusterAuroraSecret }
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: SecretActions
+            Effect: Allow
+            Action:
+              - 'secretsmanager:GetSecretValue'
+            Resource:
+              - !Ref frontendclusterAuroraSecret
   frontendclusterDBClusterParameterGroup:
     Metadata:
       'aws:copilot:description': 'A DB parameter group for engine configuration values'
@@ -115,9 +125,9 @@ Resources:
       TargetId: !Ref frontendclusterDBCluster
       TargetType: AWS::RDS::DBCluster
 Outputs:
-  frontendclusterSecret: # injected as FRONTENDCLUSTER_SECRET environment variable by Copilot.
-    Description: "The JSON secret that holds the database username and password. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
+  frontendclusterAuroraSecretAccessPolicy: # Automatically augment your instance role with this managed policy.
+    Description: "Add the IAM ManagedPolicy to your instance role"
+    Value: !Ref frontendclusterAuroraSecretAccessPolicy
+  frontendclusterSecret: # Inject this secret ARN in your manifest file.
+    Description: "The secret ARN that holds the database username and password in JSON format. Fields are 'host', 'port', 'dbname', 'username', 'password', 'dbClusterIdentifier' and 'engine'"
     Value: !Ref frontendclusterAuroraSecret
-  frontendclusterSecurityGroup:
-    Description: "The security group to attach to the workload."
-    Value: !Ref frontendclusterSecurityGroup

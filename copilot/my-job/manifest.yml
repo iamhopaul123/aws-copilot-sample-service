@@ -19,7 +19,7 @@ memory: 512
 
 on:
   # The trigger for your job. You can specify a cron schedule or keyword (@weekly) or a rate (2h, 1h30m, 15m)
-  schedule: "@every 1m"
+  schedule: "None"
 # Optional. The number of times to retry the job before failing.
 #retries: 3
 # Optional. The timeout after which to stop the job if it's still running. You can use the units (h, m, s).
