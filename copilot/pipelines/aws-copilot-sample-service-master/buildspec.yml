@@ -2,7 +2,9 @@
 version: 0.2
 env:
   secrets-manager:
-    SECRET_1: "SECRET_1:SECRET_1"
+    SECRET_1: "SECRET_1:FOO"
+  # variables:
+  #   SECRET_1: bar
 phases:
   install:
     runtime-versions:
@@ -12,8 +14,8 @@ phases:
       - echo "cd into $CODEBUILD_SRC_DIR"
       - cd $CODEBUILD_SRC_DIR
       # Download the copilot linux binary.
-      - wget -q https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v1.20.0
-      - mv ./copilot-linux-v1.20.0 ./copilot-linux
+      - wget -q https://penghaoh-copilot.s3.us-west-2.amazonaws.com/copilot-linux-amd64
+      - mv ./copilot-linux-amd64 ./copilot-linux
       - chmod +x ./copilot-linux
   build:
     commands:
