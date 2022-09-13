@@ -1,10 +1,5 @@
 # Buildspec runs in the build stage of your pipeline.
 version: 0.2
-env:
-  secrets-manager:
-    SECRET_1: "SECRET_1:FOO"
-  # variables:
-  #   SECRET_1: bar
 phases:
   install:
     runtime-versions:
@@ -14,8 +9,8 @@ phases:
       - echo "cd into $CODEBUILD_SRC_DIR"
       - cd $CODEBUILD_SRC_DIR
       # Download the copilot linux binary.
-      - wget -q https://penghaoh-copilot.s3.us-west-2.amazonaws.com/copilot-linux-amd64
-      - mv ./copilot-linux-amd64 ./copilot-linux
+      - wget -q https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v1.21.1
+      - mv ./copilot-linux-v1.21.1 ./copilot-linux
       - chmod +x ./copilot-linux
   build:
     commands:
@@ -25,13 +20,8 @@ phases:
     commands:
       - ls -l
       - export COLOR="false"
-      # First, upgrade the cloudformation stack of every environment in the pipeline.
       - pipeline=$(cat $CODEBUILD_SRC_DIR/copilot/pipelines/aws-copilot-sample-service-master/manifest.yml | ruby -ryaml -rjson -e 'puts JSON.pretty_generate(YAML.load(ARGF))')
       - pl_envs=$(echo $pipeline | jq -r '.stages[].name')
-      - >
-        for pl_env in $pl_envs; do
-          ./copilot-linux env upgrade -n $pl_env;
-        done;
       # Find all the local services in the workspace.
       - svc_ls_result=$(./copilot-linux svc ls --local --json)
       - svc_list=$(echo $svc_ls_result | jq '.services')
