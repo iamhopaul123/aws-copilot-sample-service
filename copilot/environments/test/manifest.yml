@@ -2,8 +2,16 @@ name: test
 type: Environment
 observability:
   container_insights: false
+
 # http: 
-#   public: 
+#   public:
+#     security_groups:
+#       ingress:
+#         restrict_to:
+#           cdn: true
+# #     certificates: ['arn:aws:acm:us-west-2:389803402461:certificate/20ddcea4-41f4-4b75-8d66-71d400ba618b']
 #     certificates: ['arn:aws:acm:us-west-2:403971813171:certificate/e5a6e114-b022-45b1-9339-38fbfd6db3e2']
 
-cdn: true
+# cdn:
+# #   certificate: arn:aws:acm:us-east-1:389803402461:certificate/b4b52fe2-e603-4189-be6e-45e528ccfa9b
+#   certificate: arn:aws:acm:us-east-1:403971813171:certificate/7f8c2c65-0f06-4ae6-ba98-41fe2c2a4e7e

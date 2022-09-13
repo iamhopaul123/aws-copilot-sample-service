@@ -19,3 +19,14 @@ type: Environment
 # Configure observability for your environment resources.
 observability:
   container_insights: false
+
+# http: 
+#   public:
+#     # security_groups:
+#     #   ingress:
+#     #     restrict_to:
+#     #       cdn: true
+#     certificates: ['arn:aws:acm:us-west-2:389803402461:certificate/20ddcea4-41f4-4b75-8d66-71d400ba618b']
+
+# cdn:
+#   certificate: arn:aws:acm:us-east-1:389803402461:certificate/b4b52fe2-e603-4189-be6e-45e528ccfa9b
