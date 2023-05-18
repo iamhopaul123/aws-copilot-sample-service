@@ -1,0 +1,13 @@
+{
+  "Parameters": {
+    "AddonsTemplateURL": "",
+    "AppName": "demo",
+    "EnvName": "test",
+    "WorkloadName": "mystatic"
+  },
+  "Tags": {
+    "copilot-application": "demo",
+    "copilot-environment": "test",
+    "copilot-service": "mystatic"
+  }
+}
