@@ -31,6 +31,13 @@ network:
 
 platform: linux/arm64
 
+storage:
+  volumes:
+    dbData:
+      path: /db-data
+      read_only: false
+      efs: true
+
 # storage:
   # readonly_fs: true       # Limit to read-only access to mounted root filesystems.
  

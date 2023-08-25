@@ -31,6 +31,12 @@ network:
 
 # storage:
   # readonly_fs: true       # Limit to read-only access to mounted root filesystems.
+storage:
+  volumes:
+    dbData:
+      path: /db-data
+      read_only: false
+      efs: true
  
 # Optional fields for more advanced use-cases.
 #
