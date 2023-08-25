@@ -4,8 +4,10 @@ phases:
   install:
     runtime-versions:
       ruby: 3.1
-      nodejs: 18
+      nodejs: 16
     commands:
+      - n 18
+      - echo "node -v" 
       - echo "cd into $CODEBUILD_SRC_DIR"
       - cd $CODEBUILD_SRC_DIR
       # Download the copilot linux binary.
