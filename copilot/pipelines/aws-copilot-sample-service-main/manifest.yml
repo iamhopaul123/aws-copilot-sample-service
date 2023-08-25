@@ -25,15 +25,3 @@ stages:
   - # The name of the environment.
     name: test
     # test_commands: [echo 'running tests', make test]
-    requires_approval: true
-    pre_deployments:
-      foopre:
-        buildspec: pipelines/aws-copilot-sample-service-main/buildspec_test.yml
-      barpre:
-        buildspec: pipelines/aws-copilot-sample-service-main/buildspec_test.yml
-        depends_on: [barpost]
-    post_deployments:
-      foopost:
-        buildspec: pipelines/aws-copilot-sample-service-main/buildspec_test.yml
-      barpost:
-        buildspec: pipelines/aws-copilot-sample-service-main/buildspec_test.yml
