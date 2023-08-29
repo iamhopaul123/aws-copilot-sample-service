@@ -1,0 +1,19 @@
+# The manifest for the "mystatic" service.
+# Read the full specification for the "Static Site" type at:
+# https://aws.github.io/copilot-cli/docs/manifest/static-site/
+
+# Your service name will be used in naming your resources like S3 buckets, etc.
+name: mystatic
+type: Static Site
+files:
+  - source: index.html
+
+# http:
+#   alias: static.copilot.penghaoh.com
+#   certificate: arn:aws:acm:us-east-1:403971813171:certificate/1115a386-a3db-4fb8-9b39-dfed63968129
+
+# environments:
+#   test:
+#     http:
+#       alias: static.copilot.penghaoh.com
+#       certificate: arn:aws:acm:us-east-1:403971813171:certificate/1115a386-a3db-4fb8-9b39-dfed63968129

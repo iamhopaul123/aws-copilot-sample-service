@@ -8,12 +8,7 @@ type: Load Balanced Web Service
 
 # Distribute traffic to your service.
 http:
-  # Requests to this path will be forwarded to your service.
-  # To match all requests you can use the "/" path.
   path: '/'
-  # You can specify a custom health check path. The default is "/".
-  # healthcheck: '/'
-  # alias: copilot.penghaoh.com
 
 # Configuration for your containers and service.
 image:
@@ -30,13 +25,6 @@ network:
   connect: true # Enable Service Connect for intra-environment traffic between services.
 
 platform: linux/arm64
-
-storage:
-  volumes:
-    dbData:
-      path: /db-data
-      read_only: false
-      efs: true
 
 # storage:
   # readonly_fs: true       # Limit to read-only access to mounted root filesystems.

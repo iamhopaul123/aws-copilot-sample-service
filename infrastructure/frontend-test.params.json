@@ -1,0 +1,25 @@
+{
+  "Parameters": {
+    "AddonsTemplateURL": "",
+    "AppName": "myapp",
+    "ContainerImage": "",
+    "ContainerPort": "80",
+    "DNSDelegated": "false",
+    "EnvFileARN": "",
+    "EnvName": "test",
+    "LogRetention": "30",
+    "NLBAliases": "",
+    "NLBPort": "80",
+    "TargetContainer": "frontend",
+    "TargetPort": "80",
+    "TaskCPU": "256",
+    "TaskCount": "1",
+    "TaskMemory": "512",
+    "WorkloadName": "frontend"
+  },
+  "Tags": {
+    "copilot-application": "myapp",
+    "copilot-environment": "test",
+    "copilot-service": "frontend"
+  }
+}

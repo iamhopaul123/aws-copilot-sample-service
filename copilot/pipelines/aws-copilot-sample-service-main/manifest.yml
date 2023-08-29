@@ -8,6 +8,9 @@ name: aws-copilot-sample-service-main
 # The version of the schema used in this template.
 version: 1
 
+build:
+  image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+
 # This section defines your source, changes to which trigger your pipeline.
 source:
   # The name of the provider that is used to store the source artifacts.
@@ -25,3 +28,7 @@ stages:
   - # The name of the environment.
     name: test
     # test_commands: [echo 'running tests', make test]
+    pre_deployments:
+      db_migration:
+        image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+        buildspec: copilot/pipelines/aws-copilot-sample-service-main/buildspec.yml

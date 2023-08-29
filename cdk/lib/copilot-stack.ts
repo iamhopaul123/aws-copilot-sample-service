@@ -31,6 +31,9 @@ export class AppStack extends cdk.Stack {
         })
       }
     })
+    const AdministrationRole = this.AdministrationRole.node.defaultChild as iam.CfnRole
+    AdministrationRole.overrideLogicalId('AdministrationRole')
+
     this.ExecutionRole = new iam.Role(this, 'ExecutionRole', {
       roleName: cdk.Fn.sub('${AppName}-executionrole'),
       assumedBy: new iam.ArnPrincipal(this.AdministrationRole.roleArn),
@@ -39,15 +42,72 @@ export class AppStack extends cdk.Stack {
         'ExecutionRolePolicy': new iam.PolicyDocument({
           statements: [
             new iam.PolicyStatement({
-              sid: 'MockPolicy',
-              actions: ['*'],
+              sid: 'StackSetRequiredPermissions',
+              actions: [
+                'cloudformation:*',
+                's3:*',
+                'sns:*'
+              ],
               resources: ['*'],
-            })
+            }),
+            new iam.PolicyStatement({
+              sid: 'KeyAdminPermissions',
+              actions: [
+                'kms:Create*',
+                'kms:Describe*',
+                'kms:Enable*',
+                'kms:List*',
+                'kms:Put*',
+                'kms:Update*',
+                'kms:Revoke*',
+                'kms:Disable*',
+                'kms:Get*',
+                'kms:Delete*',
+                'kms:TagResource',
+                'kms:UntagResource',
+                'kms:ScheduleKeyDeletion',
+                'kms:CancelKeyDeletion'
+              ],
+              resources: ['*'],
+            }),
+            new iam.PolicyStatement({
+              sid: 'ManageECRRepos',
+              actions: [
+                'ecr:DescribeImageScanFindings',
+                'ecr:GetLifecyclePolicyPreview',
+                'ecr:CreateRepository',
+                'ecr:GetDownloadUrlForLayer',
+                'ecr:GetAuthorizationToken',
+                'ecr:ListTagsForResource',
+                'ecr:ListImages',
+                'ecr:DeleteLifecyclePolicy',
+                'ecr:DeleteRepository',
+                'ecr:SetRepositoryPolicy',
+                'ecr:BatchGetImage',
+                'ecr:DescribeImages',
+                'ecr:DescribeRepositories',
+                'ecr:BatchCheckLayerAvailability',
+                'ecr:GetRepositoryPolicy',
+                'ecr:GetLifecyclePolicy',
+                'ecr:TagResource'
+              ],
+              resources: ['*'],
+            }),
           ]
         })
       }
     })
+    const ExecutionRole = this.ExecutionRole.node.defaultChild as iam.CfnRole
+    ExecutionRole.overrideLogicalId('ExecutionRole')
     // Outputs
+    new cdk.CfnOutput(this, 'ExecutionRoleARN', {
+      value: this.ExecutionRole.roleArn,
+      description: 'ExecutionRole used by this application to set up ECR Repos, KMS Keys and S3 buckets'
+    })
+    new cdk.CfnOutput(this, 'AdministrationRoleARN', {
+      value: this.AdministrationRole.roleArn,
+      description: 'AdministrationRole used by this application to manage this application\'s StackSet'
+    })
   }
 }
 

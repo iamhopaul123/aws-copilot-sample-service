@@ -11,12 +11,9 @@ type: Environment
 #     certificates:
 #       - arn:aws:acm:us-west-2:403971813171:certificate/e5a6e114-b022-45b1-9339-38fbfd6db3e2
 
-# cdn: true
-#   static_assets:
-#     location: mystatic
-#     alias: copilot.penghaoh.com
-#     path: static/*
-#   certificate: arn:aws:acm:us-east-1:403971813171:certificate/7f8c2c65-0f06-4ae6-ba98-41fe2c2a4e7e
+# cdn:
+#   certificate: arn:aws:acm:us-east-1:403971813171:certificate/1115a386-a3db-4fb8-9b39-dfed63968129
+#   terminate_tls: true
 # Import your own VPC and subnets or configure how they should be created.
 
 # Configure the load balancers in your environment, once created.
