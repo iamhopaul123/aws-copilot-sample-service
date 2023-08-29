@@ -36,7 +36,11 @@ storage:
     dbData:
       path: /db-data
       read_only: false
-      efs: true
+      efs:
+        id: fs-0a1474d910898cc9c
+        auth:
+          iam: true
+          access_point_id: fsap-0bbcbd7d2c4ec838e
  
 # Optional fields for more advanced use-cases.
 #

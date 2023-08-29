@@ -9,6 +9,6 @@
 #     Port: !Ref TargetPort
 #     DnsName: yamlpatchiscool
 
-- op: replace
-  path: /Resources/AccessPoint/Properties/RootDirectory/Path
-  value: /frontend
+# - op: replace
+#   path: /Resources/AccessPoint/Properties/RootDirectory/Path
+#   value: /frontend

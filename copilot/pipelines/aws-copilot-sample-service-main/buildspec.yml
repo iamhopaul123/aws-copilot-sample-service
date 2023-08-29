@@ -7,7 +7,7 @@ phases:
       nodejs: 16
     commands:
       - n 18
-      - echo "node -v" 
+      - node -v
       - echo "cd into $CODEBUILD_SRC_DIR"
       - cd $CODEBUILD_SRC_DIR
       # Download the copilot linux binary.
