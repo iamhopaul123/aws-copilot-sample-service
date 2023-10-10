@@ -1,22 +1,211 @@
-# Delete the task role resource
-# - op: remove
-#   path: /Resources/TaskRole
-
-# Add a service connect alias
-# - op: add
-#   path: /Resources/Service/Properties/ServiceConnectConfiguration/Services/0/ClientAliases/-
-#   value:
-#     Port: !Ref TargetPort
-#     DnsName: yamlpatchiscool
-
-# Replace the task role in the task definition
-# - op: replace
-#   path: /Resources/TaskDefinition/Properties/TaskRoleArn
-#   value: arn:aws:iam::123456789012:role/MyTaskRole
-
 - op: add
   path: /Resources/CloudFrontDistribution/Properties/DistributionConfig/CustomErrorResponses
   value:
     - ErrorCode: 403
       ResponseCode: 200
       ResponsePagePath: /index.html
+
+# - op: add
+#   path: /Resources/MyIPSet
+#   value:
+#     Type: AWS::WAFv2::IPSet
+#     Properties:
+#       Name: allowediplist
+#       Scope: CLOUDFRONT
+#       Addresses:
+#         - 31.0.0.0/8
+#         - 198.28.195.0/21
+#         - 174.165.55.184/32
+#       IPAddressVersion: IPV4
+
+# - op: add
+#   path: /Resources/MyWebACL
+#   value:
+#     Metadata:
+#       'aws:copilot:description': 'A custom resource to create a WAF WebACL using an IpSet'
+#     Type: Custom::MyWebACLFunction
+#     Properties:
+#       ServiceToken: !GetAtt MyWebACLFunction.Arn
+#       IpSetArn: arn:aws:wafv2:us-east-1:403971813171:global/ipset/asdf/83839fc1-60a3-4c26-9757-c1c2deabec54
+
+# - op: add
+#   path: /Resources/MyWebACLFunction
+#   value:
+#     Type: AWS::Lambda::Function
+#     Properties:
+#       Code:
+#         ZipFile: |
+#           const aws = require("aws-sdk");
+
+#           let report = function (
+#             event,
+#             context,
+#             responseStatus,
+#             physicalResourceId,
+#             responseData,
+#             reason
+#           ) {
+#             return new Promise((resolve, reject) => {
+#               const https = require("https");
+#               const { URL } = require("url");
+
+#               let responseBody = JSON.stringify({
+#                 Status: responseStatus,
+#                 Reason: reason,
+#                 PhysicalResourceId:
+#                   physicalResourceId || context.logStreamName,
+#                 StackId: event.StackId,
+#                 RequestId: event.RequestId,
+#                 LogicalResourceId: event.LogicalResourceId,
+#                 Data: responseData,
+#               });
+
+#               const parsedUrl = new URL(event.ResponseURL);
+#               const options = {
+#                 hostname: parsedUrl.hostname,
+#                 port: 443,
+#                 path: parsedUrl.pathname + parsedUrl.search,
+#                 method: "PUT",
+#                 headers: {
+#                   "Content-Type": "",
+#                   "Content-Length": responseBody.length,
+#                 },
+#               };
+
+#               https
+#                 .request(options)
+#                 .on("error", reject)
+#                 .on("response", (res) => {
+#                   res.resume();
+#                   if (res.statusCode >= 400) {
+#                     reject(new Error(`Error ${res.statusCode}: ${res.statusMessage}`));
+#                   } else {
+#                     resolve();
+#                   }
+#                 })
+#                 .end(responseBody, "utf8");
+#             });
+#           };
+
+#           /**
+#           * Main handler, invoked by Lambda
+#           */
+#           exports.handler = async function (event, context) {
+#             let responseData = {};
+#             let physicalResourceId = event.PhysicalResourceId;
+#             const props = event.ResourceProperties;
+#             try {
+#             // Configure clients.
+#               var wafv2 = new aws.WAFV2({ region: 'us-east-1' });
+#               switch (event.RequestType) {
+#                 case "Create":
+#                 case "Update":
+#                   var createWebACLParams = {
+#                     DefaultAction: { /* required */
+#                       Block: {}
+#                     },
+#                     Name: 'myCloudfrontWafRule', /* required */
+#                     Scope: 'CLOUDFRONT',
+#                     VisibilityConfig: { /* required */
+#                       CloudWatchMetricsEnabled: true, /* required */
+#                       MetricName: 'test', /* required */
+#                       SampledRequestsEnabled: true /* required */
+#                     },
+#                     Rules: [
+#                       {
+#                         Name: 'allowIpRule', /* required */
+#                         Priority: '3', /* required */
+#                         Statement: { /* Statement */ /* required */
+#                           IPSetReferenceStatement: {
+#                             ARN: props.IpSetArn, /* required */
+#                           }
+#                         },
+#                         Action: {
+#                           Count: {}
+#                         },
+#                         VisibilityConfig: { /* required */
+#                           CloudWatchMetricsEnabled: true, /* required */
+#                           MetricName: 'test', /* required */
+#                           SampledRequestsEnabled: true
+#                         }
+#                       }
+#                     ],
+#                   };
+#                   const response = await wafv2.createWebACL(createWebACLParams, function(err, data) {
+#                     if (err) console.log(err, err.stack); // an error occurred
+#                     else     console.log(data);           // successful response
+#                   }).promise();
+#                   physicalResourceId = JSON.stringify(response.Summary);
+#                   responseData.Arn = response.Summary.ARN;
+#                   break;
+#                 case "Delete":
+#                   // If the resource didn't create correctly, the physical resource ID won't be the
+#                   // certificate ARN, so don't try to delete it in that case.
+#                   if (physicalResourceId.startsWith("{")) {
+#                     let obj = JSON.parse(physicalResourceId || "{}");
+#                     var deleteParams = {
+#                       Id: obj.Id, 
+#                       LockToken: obj.LockToken, 
+#                       Name: obj.Name,
+#                       Scope: 'CLOUDFRONT'
+#                     };
+#                     await wafv2.deleteWebACL(deleteParams, function(err, data) {
+#                       if (err) console.log(err, err.stack);
+#                       else     console.log(data);
+#                     }).promise();
+#                   }
+#                   break;
+#                 default:
+#                   throw new Error(`Unsupported request type ${event.RequestType}`);
+#               }
+#               await report(event, context, "SUCCESS", physicalResourceId, responseData);
+#             } catch (err) {
+#               console.log(`Caught error ${err}.`);
+#               await report(
+#                 event,
+#                 context,
+#                 "FAILED",
+#                 physicalResourceId,
+#                 null,
+#                 `${err.message} (Log: ${context.logGroupName}/${context.logStreamName})`
+#               );
+#             }
+#           };
+#       Handler: "index.handler"
+#       Timeout: 300
+#       MemorySize: 512
+#       Role: !GetAtt 'MyWebACLRole.Arn'
+#       Runtime: nodejs16.x
+
+# - op: add
+#   path: /Resources/MyWebACLRole
+#   value:
+#     Metadata:
+#       'aws:copilot:description': 'An IAM policy to allow to manage WAF WebACL'
+#     Type: AWS::IAM::Role
+#     Properties:
+#       AssumeRolePolicyDocument:
+#         Version: '2012-10-17'
+#         Statement:
+#           - Effect: Allow
+#             Principal:
+#               Service:
+#                 - lambda.amazonaws.com
+#             Action:
+#               - sts:AssumeRole
+#       Policies:
+#         - PolicyName: 'ManageWebACL'
+#           PolicyDocument:
+#             Version: '2012-10-17'
+#             Statement:
+#               - Effect: Allow
+#                 Action:
+#                   - wafv2:CreateWebACL
+#                   - wafv2:DeleteWebACL
+#                 Resource: '*'
+#       ManagedPolicyArns:
+#           - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+# - op: add
+#   path: /Resources/CloudFrontDistribution/Properties/DistributionConfig/WebACLId
+#   value: !GetAtt MyWebACL.Arn

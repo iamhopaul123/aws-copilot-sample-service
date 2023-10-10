@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as iam from "aws-cdk-lib/aws-iam"
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 export class AppStack extends cdk.Stack {
   public readonly AdministrationRole: iam.Role;
@@ -173,6 +174,30 @@ export class EnvStack extends cdk.Stack {
       enableDnsSupport: true,
       maxAzs: 2
     })
+    const alb = new elbv2.ApplicationLoadBalancer(this, 'alb', {
+      vpc: this.VPC
+    })
+    const listener = alb.addListener('alb-listener', {
+      port: 80,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      defaultAction: elbv2.ListenerAction.fixedResponse(404, { contentType: 'text/plain' }),
+    })
+    const rule = new elbv2.ApplicationListenerRule(this, 'rule', {
+      priority: 1,
+      listener,
+      conditions: [elbv2.ListenerCondition.hostHeaders(['lwjgl.com', 'www.lwjgl.com'])],
+      action: elbv2.ListenerAction.redirect({
+        host: 'www.lwjgl.org',
+        protocol: elbv2.ApplicationProtocol.HTTPS,
+        port: '443',
+        path: '/#{path}',
+        query: '#{query}',
+        permanent: true,
+      }),
+    })
+    const HTTPSListenerRuleNode = rule.node.defaultChild as elbv2.CfnListenerRule
+    HTTPSListenerRuleNode.addOverride('Properties.Actions', [{ "Type": "authenticate-cognito", "AuthenticateCognitoConfig": { "UserPoolArn": { "Fn::ImportValue": "!Sub ${AppName}-${EnvName}-UserpoolArn" }, "UserPoolClientId": { "Fn::ImportValue": "!Sub ${AppName}-${EnvName}-UserpoolClientId" }, "UserPoolDomain": "!Sub ${EnvName}-${AppName}", "SessionCookieName": "AWSELBAuthSessionCookie", "Scope": "openid", "SessionTimeout": 86400, "AuthenticationRequestExtraParams": { "display": "page", "prompt": "login" }, "OnUnauthenticatedRequest": "authenticate" }, "Order": 1 }, { "TargetGroupArn": "!Ref TargetGroup", "Type": "forward", "Order": 2 }])
+
     // new ec2.CfnInternetGateway()
     // new ec2.CfnRouteTable(this, 'PublicRouteTable', {
     //   vpcId: this.VPC.vpcId,
